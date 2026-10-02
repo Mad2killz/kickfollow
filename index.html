@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kick Cyber Hologram Stream Overlay</title>
+
+  <!-- Import Modern Futuristic Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --kick-green: #53FC18;
+      --kick-green-glow: rgba(83, 252, 24, 0.85);
+      --kick-green-dim: rgba(83, 252, 24, 0.2);
+      --kick-dark-green: #002b00;
+      --kick-black: #0B0E0F;
+      --kick-card-bg: rgba(11, 14, 15, 0.92);
+      --cyber-border: rgba(83, 252, 24, 0.5);
+      --text-white: #FFFFFF;
+      
+      --widget-w: 540px;
+      --widget-h: 125px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Rajdhani', sans-serif;
+      perspective: 1200px;
+    }
+
+    /* Ambient Canvas Container */
+    #fx-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Main Perspective Wrapper */
+    #widget-perspective-wrapper {
+      position: relative;
+      width: var(--widget-w);
+      height: var(--widget-h);
+      perspective: 1000px;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+
+    /* 3D Hologram Stage Box */
+    .holo-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      border-radius: 16px;
+      will-change: transform, opacity;
+      opacity: 0;
+    }
+
+    /* Holographic Beam Laser / Scanline Charging Bar */
+    .scan-beam {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--kick-green), var(--text-white), transparent);
+      box-shadow: 0 0 15px var(--kick-green), 0 0 25px var(--kick-green);
+      z-index: 15;
+      opacity: 0;
+    }
+
+    /* Hologram Matrix Glow Frame */
+    .holo-frame {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: var(--kick-card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid var(--cyber-border);
+      border-radius: 16px;
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.85),
+        inset -2px -2px 15px var(--kick-green-dim),
+        inset 2px 2px 15px rgba(255, 255, 255, 0.1),
+        -3px 0 25px var(--kick-green-dim),
+        3px 0 25px var(--kick-green-dim);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 2;
+      overflow: hidden;
+      transform-style: preserve-3d;
+    }
+
+    /* Cyber Tech Corners */
+    .corner-tech {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      pointer-events: none;
+      z-index: 6;
+    }
+    .ct-tl { top: 6px; left: 6px; border-top: 2px solid var(--kick-green); border-left: 2px solid var(--kick-green); filter: drop-shadow(0 0 6px var(--kick-green)); }
+    .ct-tr { top: 6px; right: 6px; border-top: 2px solid var(--text-white); border-right: 2px solid var(--text-white); filter: drop-shadow(0 0 6px var(--text-white)); }
+    .ct-bl { bottom: 6px; left: 6px; border-bottom: 2px solid var(--text-white); border-left: 2px solid var(--text-white); filter: drop-shadow(0 0 6px var(--text-white)); }
+    .ct-br { bottom: 6px; right: 6px; border-bottom: 2px solid var(--kick-green); border-right: 2px solid var(--kick-green); filter: drop-shadow(0 0 6px var(--kick-green)); }
+
+    /* Animated Grid Scan Effect Inside Card */
+    .grid-overlay {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(83, 252, 24, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.6;
+    }
+
+    /* Left Side Content */
+    .content-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      z-index: 5;
+      transform: translateZ(35px);
+    }
+
+    .header-tag {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--kick-green);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-shadow: 0 0 10px rgba(83, 252, 24, 0.5);
+    }
+
+    .glitch-text {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Wrapper cu vizibilitate ultra-clară pentru handle */
+    .handle-pill {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(83, 252, 24, 0.35);
+      padding: 4px 12px;
+      border-radius: 8px;
+      width: fit-content;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), inset 0 0 8px rgba(83, 252, 24, 0.1);
+    }
+
+    .kick-handle {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: 0.5px;
+      text-shadow: 
+        0 0 10px rgba(83, 252, 24, 0.6),
+        0 2px 4px rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+    }
+
+    /* Badge LIVE cu animație neon */
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(83, 252, 24, 0.15);
+      border: 1px solid var(--kick-green);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--kick-green);
+      letter-spacing: 1.2px;
+      box-shadow: 0 0 12px var(--kick-green-dim);
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--kick-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--kick-green);
+      animation: neonBlink 1s infinite alternate;
+    }
+
+    @keyframes neonBlink {
+      from { opacity: 0.3; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1.3); }
+    }
+
+    /* Vertical Holographic Divider */
+    .cyber-divider {
+      width: 2px;
+      height: 60px;
+      background: linear-gradient(180deg, transparent, var(--kick-green), var(--text-white), transparent);
+      margin: 0 22px;
+      z-index: 5;
+      transform: translateZ(25px);
+      box-shadow: -1px 0 8px var(--kick-green), 1px 0 8px rgba(255,255,255,0.5);
+    }
+
+    /* Right Side Logo Container */
+    .content-right {
+      width: 80px;
+      height: 80px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 5;
+      transform: translateZ(50px);
+    }
+
+    .logo-hologram-shield {
+      width: 72px;
+      height: 72px;
+      background: rgba(11, 14, 15, 0.95);
+      border: 1.5px solid var(--kick-green);
+      border-radius: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 
+        0 10px 25px rgba(0,0,0,0.8),
+        -3px 0 15px var(--kick-green-dim),
+        3px 0 15px rgba(255,255,255,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo-hologram-shield svg {
+      width: 42px;
+      height: 42px;
+      filter: drop-shadow(0 0 6px var(--kick-green-glow));
+    }
+
+    /* Toast Clipboard Notification Tag */
+    #copy-toast {
+      position: absolute;
+      bottom: -45px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px) scale(0.8);
+      background: linear-gradient(90deg, #38b000, var(--kick-green));
+      color: #000;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 6px 16px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px var(--kick-green-glow);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 100;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="fx-canvas"></canvas>
+
+  <div id="widget-perspective-wrapper">
+    
+    <!-- Holographic Beam Charger -->
+    <div class="scan-beam" id="scanBeam"></div>
+
+    <!-- 3D Card Box Container -->
+    <div class="holo-container" id="holoBox">
+      <div class="holo-frame">
+        <div class="grid-overlay"></div>
+        
+        <!-- Tech Corners -->
+        <div class="corner-tech ct-tl"></div>
+        <div class="corner-tech ct-tr"></div>
+        <div class="corner-tech ct-bl"></div>
+        <div class="corner-tech ct-br"></div>
+
+        <!-- Left Information Area -->
+        <div class="content-left">
+          <div class="header-tag">
+            <span class="glitch-text" id="actionHeader">URMĂREȘTE-MĂ ȘI AICI</span>
+            <div class="live-pill">
+              <span class="live-dot"></span>
+              LIVE
+            </div>
+          </div>
+          <div class="handle-pill">
+            <div class="kick-handle" id="kickUrl">
+              @thesergiogamez
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider Line -->
+        <div class="cyber-divider" id="cyberDivider"></div>
+
+        <!-- Right Holographic Logo Shield -->
+        <div class="content-right">
+          <div class="logo-hologram-shield" id="logoShield">
+            <!-- Official Kick SVG Logo -->
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 3H8V8.5L12.5 3H18.5L12.5 10L19 21H13L8 12.5V21H3V3Z" fill="#53FC18"/>
+            </svg>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Interactive Copy Toast -->
+    <div id="copy-toast">⚡ LINK COPIAT ÎN CLIPBOARD!</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      
+      // Canvas FX Setup
+      const canvas = document.getElementById("fx-canvas");
+      const ctx = canvas.getContext("2d");
+      let particles = [];
+      let shockwaves = [];
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      // Particle FX Class
+      class EnergySpark {
+        constructor(x, y, color) {
+          this.x = x;
+          this.y = y;
+          this.size = Math.random() * 3 + 1.5;
+          this.speedX = (Math.random() - 0.5) * 10;
+          this.speedY = (Math.random() - 0.5) * 10 - 2;
+          this.color = color;
+          this.alpha = 1;
+          this.decay = Math.random() * 0.025 + 0.015;
+          this.gravity = 0.12;
+        }
+
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          this.speedY += this.gravity;
+          this.alpha -= this.decay;
+        }
+
+        draw() {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, this.alpha);
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // Shockwave FX Class
+      class Shockwave {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+          this.radius = 10;
+          this.alpha = 1;
+          this.color = '#53FC18';
+          this.secondaryColor = '#FFFFFF';
+        }
+
+        update() {
+          this.radius += 6;
+          this.alpha -= 0.025;
+        }
+
+        draw() {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, this.alpha);
+          ctx.strokeStyle = this.color;
+          ctx.lineWidth = 3;
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Secondary Offset Shockwave Ring
+          ctx.strokeStyle = this.secondaryColor;
+          ctx.shadowColor = this.secondaryColor;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, Math.max(0, this.radius - 8), 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      function createBurst(x, y, count = 40) {
+        const colors = ['#53FC18', '#38b000', '#FFFFFF'];
+        for (let i = 0; i < count; i++) {
+          const col = colors[Math.floor(Math.random() * colors.length)];
+          particles.push(new EnergySpark(x, y, col));
+        }
+        shockwaves.push(new Shockwave(x, y));
+      }
+
+      function renderFX() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Render Particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+          particles[i].update();
+          particles[i].draw();
+          if (particles[i].alpha <= 0) particles.splice(i, 1);
+        }
+
+        // Render Shockwaves
+        for (let i = shockwaves.length - 1; i >= 0; i--) {
+          shockwaves[i].update();
+          shockwaves[i].draw();
+          if (shockwaves[i].alpha <= 0) shockwaves.splice(i, 1);
+        }
+
+        requestAnimationFrame(renderFX);
+      }
+      renderFX();
+
+      const holoBox = document.getElementById("holoBox");
+      const scanBeam = document.getElementById("scanBeam");
+      const actionHeader = document.getElementById("actionHeader");
+      const kickUrl = document.getElementById("kickUrl");
+      const cyberDivider = document.getElementById("cyberDivider");
+      const logoShield = document.getElementById("logoShield");
+      const copyToast = document.getElementById("copy-toast");
+
+      let mainTL;
+
+      function triggerCyberTimeline() {
+        if (mainTL) mainTL.kill();
+
+        mainTL = gsap.timeline({ repeat: -1, repeatDelay: 4 });
+
+        // Initial 3D Isometric State Setup
+        gsap.set(holoBox, {
+          opacity: 0,
+          rotationX: -110,
+          rotationY: 35,
+          z: -400,
+          scale: 0.5
+        });
+
+        gsap.set([actionHeader, kickUrl], {
+          opacity: 0,
+          x: -30,
+          skewX: -20
+        });
+
+        gsap.set(logoShield, {
+          scale: 0,
+          rotationY: 180,
+          opacity: 0
+        });
+
+        gsap.set(cyberDivider, {
+          scaleY: 0,
+          opacity: 0
+        });
+
+        gsap.set(scanBeam, {
+          left: "-100%",
+          opacity: 1
+        });
+
+        // Stage 1: Laser Scanline Charge-Up Across Top
+        mainTL.to(scanBeam, {
+          duration: 0.6,
+          left: "100%",
+          ease: "power2.inOut"
+        })
+        .set(scanBeam, { opacity: 0 })
+
+        // Stage 2: 3D Hologram Mechanical Flip Reveal
+        .to(holoBox, {
+          duration: 1.1,
+          opacity: 1,
+          rotationX: 0,
+          rotationY: 0,
+          z: 0,
+          scale: 1,
+          ease: "back.out(1.5)",
+          onStart: () => {
+            const rect = holoBox.getBoundingClientRect();
+            createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 30);
+          }
+        }, "-=0.2")
+
+        // Stage 3: Cyber Divider Expansion
+        .to(cyberDivider, {
+          duration: 0.4,
+          scaleY: 1,
+          opacity: 1,
+          ease: "power3.out"
+        }, "-=0.6")
+
+        // Stage 4: Logo Shield 3D Unfold
+        .to(logoShield, {
+          duration: 0.7,
+          scale: 1,
+          rotationY: 0,
+          opacity: 1,
+          ease: "elastic.out(1.1, 0.5)"
+        }, "-=0.5")
+
+        // Stage 5: Text Glitch In
+        .to([actionHeader, kickUrl], {
+          duration: 0.4,
+          opacity: 1,
+          x: 0,
+          skewX: 0,
+          stagger: 0.15,
+          ease: "power4.out"
+        }, "-=0.4")
+
+        // Stage 6: Ambient Pulse Hold Loop
+        .to(logoShield, {
+          duration: 0.3,
+          scale: 1.12,
+          boxShadow: "0 0 35px rgba(83, 252, 24, 0.9)",
+          yoyo: true,
+          repeat: 1,
+          ease: "sine.inOut"
+        })
+        .to(holoBox, {
+          duration: 2.2,
+          y: "-=5",
+          repeat: 1,
+          yoyo: true,
+          ease: "sine.inOut"
+        }, "-=0.2")
+
+        // Stage 7: High-Tech Exit Breakdown
+        .to([actionHeader, kickUrl, logoShield], {
+          duration: 0.35,
+          opacity: 0,
+          x: 30,
+          stagger: 0.05,
+          ease: "power2.in"
+        })
+        .to(cyberDivider, {
+          duration: 0.25,
+          scaleY: 0,
+          ease: "power2.in"
+        }, "-=0.2")
+        .to(holoBox, {
+          duration: 0.7,
+          opacity: 0,
+          rotationX: 100,
+          rotationY: -30,
+          z: -300,
+          scale: 0.6,
+          ease: "power3.in"
+        }, "-=0.2");
+      }
+
+      triggerCyberTimeline();
+
+      const wrapper = document.getElementById("widget-perspective-wrapper");
+
+      // 3D Tilt Physics on Pointer Move
+      wrapper.addEventListener("mousemove", (e) => {
+        const rect = wrapper.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+
+        const tiltX = (y / (rect.height / 2)) * -20;
+        const tiltY = (x / (rect.width / 2)) * 20;
+
+        gsap.to(holoBox, {
+          duration: 0.3,
+          rotationX: tiltX,
+          rotationY: tiltY,
+          ease: "power1.out"
+        });
+      });
+
+      wrapper.addEventListener("mouseleave", () => {
+        gsap.to(holoBox, {
+          duration: 0.8,
+          rotationX: 0,
+          rotationY: 0,
+          ease: "elastic.out(1, 0.4)"
+        });
+      });
+
+      // Interactive Click to Copy with Shockwave Burst
+      wrapper.addEventListener("click", (e) => {
+        const urlToCopy = "https://kick.com/thesergiogamez";
+
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(urlToCopy);
+        } else {
+          const el = document.createElement('textarea');
+          el.value = urlToCopy;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+        }
+
+        createBurst(e.clientX, e.clientY, 45);
+
+        gsap.killTweensOf(copyToast);
+        gsap.timeline()
+          .to(copyToast, {
+            duration: 0.3,
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            ease: "back.out(1.7)"
+          })
+          .to(copyToast, {
+            duration: 0.3,
+            opacity: 0,
+            y: 10,
+            scale: 0.8,
+            delay: 1.8,
+            ease: "power2.in"
+          });
+      });
+    });
+  </script>
+</body>
+</html>
